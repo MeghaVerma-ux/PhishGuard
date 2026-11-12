@@ -1,0 +1,14 @@
+{
+    "original_rows": 579920,
+    "training_rows": 16000,
+    "testing_rows": 4000,
+    "original_features": 74,
+    "selected_features": 74,
+    "missing_values_before_imputation": 0,
+    "duplicates_removed": 0,
+    "sampling_size": 20000,
+    "scaling": "StandardScaler for scale-sensitive algorithms",
+    "imputation": "Median",
+    "feature_selection": "VarianceThreshold",
+    "outlier_policy": "IQR audit; no blind deletion"
+}
