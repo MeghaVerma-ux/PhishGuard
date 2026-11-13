@@ -1,121 +1,68 @@
-# 🛡️ PhishGuard – Phishing Website Detection Using Ensemble Learning
+# PhishGuard – Phishing Website Detection Using Machine Learning
 
-## 1. Project Overview
+## Project Overview
+PhishGuard is a machine-learning-based web application that detects potentially phishing websites by analysing URL characteristics, domain information, DNS records and WHOIS attributes.
 
-PhishGuard is a Machine Learning-based website classification system that analyzes extracted numerical website features to identify potentially suspicious websites.
+Users can enter a URL and receive a prediction through a web-based interface.
 
-The project uses multiple Machine Learning algorithms, compares their performance, and selects the best-performing model using evaluation metrics.
+## Objectives
+- Detect potentially malicious URLs.
+- Analyse URL and domain characteristics.
+- Apply data preprocessing and machine learning.
+- Evaluate model performance.
+- Deploy the model through a FastAPI backend.
+- Provide an interactive URL-scanning interface.
 
-The selected model, Hist Gradient Boosting, is deployed through a FastAPI backend with an interactive web dashboard.
+## Technology Stack
+- Python
+- Pandas and NumPy
+- Scikit-learn
+- FastAPI and Uvicorn
+- HTML, CSS and JavaScript
+- dnspython and python-whois
+- Git and GitHub
+- Render
+- Docker
 
-**Project Type:** Binary Classification  
-**Domain:** Artificial Intelligence & Machine Learning  
-**Best Model:** Hist Gradient Boosting
+## Dataset
+- Total records: 579,920
+- Features: 74
+- URL column: `url`
+- Target column: `label`
 
-## 2. Problem Statement
+Target distribution:
+- Label 0: 339,074 records
+- Label 1: 240,846 records
 
-Phishing websites imitate legitimate websites to trick users into sharing sensitive information.
+The class mapping is provisional and should be confirmed against the original dataset documentation.
 
-PhishGuard aims to classify website records using extracted numerical features and Machine Learning techniques.
+## Data Preprocessing
+The project includes:
+- Dataset loading and inspection
+- Missing-value analysis
+- Duplicate-value checks
+- Infinite-value checks
+- Constant-feature analysis
+- Target distribution analysis
+- Feature selection and preparation
 
-The system provides a prediction, confidence score, and feature importance analysis.
+The deployed model pipeline uses:
+1. SimpleImputer with median strategy
+2. VarianceThreshold
+3. HistGradientBoostingClassifier
 
-## 3. Objectives
+## Machine Learning Model
+The deployed model is Hist Gradient Boosting Classifier.
 
-- Analyze numerical website features.
-- Perform data preprocessing and exploratory analysis.
-- Train and compare multiple classification algorithms.
-- Evaluate models using standard performance metrics.
-- Deploy the selected model using FastAPI.
-- Build an interactive prediction dashboard.
-- Analyze important features using Permutation Importance.
+Configuration:
+- max_iter = 60
+- max_leaf_nodes = 25
+- random_state = 42
 
-## 4. Technologies Used
+The trained model is stored at `model/model.joblib`.
 
-| Technology | Purpose |
-|---|---|
-| Python | Programming language |
-| Pandas | Data manipulation |
-| NumPy | Numerical operations |
-| Scikit-learn | Machine Learning |
-| Matplotlib | Data visualization |
-| MLflow | Experiment tracking |
-| FastAPI | Backend API |
-| Pydantic | Input validation |
-| HTML, CSS, JavaScript | Frontend |
-| Pytest | Testing |
-| Docker | Containerization |
-
-## 5. Dataset Description
-
-**Dataset:** `data/final_dataset.csv`
-
-| Attribute | Description |
-|---|---|
-| Total records | 579,920 |
-| Total columns | 76 |
-| Input features | 74 numerical features |
-| URL column | Original website URL |
-| Target column | `label` |
-| Missing values | 0 in initial inspection |
-
-The original URL column is excluded from model training. The target column is used for binary classification.
-
-### Data Contract
-
-| Field | Data Type | Purpose |
-|---|---|---|
-| `url` | String | Original website URL; excluded from training |
-| 74 feature columns | Numeric | Extracted website characteristics |
-| `label` | Binary integer | Classification target (0 or 1) |
-
-The 74 numerical features represent website and URL characteristics, such as hostname length, domain age, HTTPS usage, URL depth, and DNS-related information.
-
-Feature-specific valid ranges should be determined from the original dataset documentation and feature extraction rules.
-
-**Dataset source:** Add the original dataset URL here.
-
-**Note:** Confirm the meaning of label 0 and label 1 using the original dataset documentation before interpreting predictions as legitimate or phishing.
-
-## 6. Data Preprocessing
-
-The preprocessing and model pipeline includes:
-
-1. Separating input features and target labels.
-2. Excluding the original URL column from training.
-3. Checking missing values.
-4. Checking duplicate records.
-5. Checking infinite values.
-6. Inspecting constant features and feature distributions.
-7. Examining outliers and numerical feature characteristics.
-8. Applying median imputation.
-9. Applying Variance Threshold for feature selection.
-10. Training and evaluating classification models.
-
-The trained Hist Gradient Boosting pipeline uses median imputation and Variance Threshold before classification.
-
-## 7. Machine Learning Algorithms
-
-The project compares the following 10 algorithms:
-
-1. Decision Tree
-2. Random Forest
-3. Extra Trees
-4. Logistic Regression
-5. K-Nearest Neighbors (KNN)
-6. Gaussian Naive Bayes
-7. AdaBoost
-8. Gradient Boosting
-9. Hist Gradient Boosting
-10. Linear Support Vector Machine (SVM)
-
-The best model is selected based on F1-score.
-
-## 8. Model Evaluation
-
-The selected model is **Hist Gradient Boosting**.
-
-Evaluation results on the held-out test set:
+## Model Evaluation
+Previously recorded held-out evaluation results:
 
 | Metric | Score |
 |---|---:|
@@ -125,229 +72,82 @@ Evaluation results on the held-out test set:
 | F1-score | 95.0381% |
 | ROC-AUC | 99.2748% |
 
-**Important:** These metrics were obtained from the held-out test evaluation after training on a 20,000-row sample. They should not be interpreted as evaluation results on the entire 579,920-row dataset.
+These are recorded evaluation results, not guaranteed real-world performance.
 
-## 9. Feature Importance Analysis
+## Application Workflow
+1. User enters a URL.
+2. Frontend sends it to FastAPI.
+3. Backend extracts URL features.
+4. DNS and WHOIS information is collected where available.
+5. Features are passed to the trained model.
+6. Model generates a prediction.
+7. Result is displayed on the frontend.
 
-PhishGuard uses **Permutation Importance** to identify which features have the greatest influence on model performance.
+## API Endpoints
 
-The analysis uses a balanced sample of 1,000 records, with 500 records from each class.
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/` | GET | Web application |
+| `/health` | GET | Health check |
+| `/sample` | GET | Sample information |
+| `/feature-importance` | GET | Feature importance |
+| `/predict` | POST | Prediction from features |
+| `/scan` | POST | URL scanning |
 
-### Top 10 Important Features
-
-| Rank | Feature |
-|---:|---|
-| 1 | hostname_length |
-| 2 | domain_age_days |
-| 3 | has_www |
-| 4 | path_length |
-| 5 | uses_https |
-| 6 | ttl_value |
-| 7 | uppercase_ratio |
-| 8 | has_mx_record |
-| 9 | url_depth |
-| 10 | num_dots |
-
-The importance score represents the decrease in F1-score when a feature is randomly shuffled. A higher score indicates greater importance to the model's predictive performance.
-
-Results are saved in:
-
-- `results/feature_importance.csv`
-- `results/feature_importance.png`
-
-## 10. Project Structure
-
-```text
-Phishing-Website-Detection/
-│
-├── data/
-│   └── final_dataset.csv
-│
-├── model/
-│   └── model.joblib
-│
-├── results/
-│   ├── feature_importance.csv
-│   └── feature_importance.png
-│
-├── static/
-│   └── index.html
-│
-├── tests/
-│   └── test_app.py
-│
-├── app.py
-├── train.py
-├── feature_importance.py
-├── requirements.txt
-├── requirements-serve.txt
-├── Dockerfile
-├── README.md
-└── .gitignore
-```
-
-## 11. Installation and Setup
+## Local Setup
 
 Clone the repository:
 
 ```bash
-git clone YOUR_REPOSITORY_URL
-cd Phishing-Website-Detection
+git clone https://github.com/MeghaVerma-ux/PhishGuard.git
+cd PhishGuard
 ```
 
-Create a virtual environment:
+Create and activate a virtual environment:
 
 ```bash
 python -m venv venv
-```
-
-Activate on Windows:
-
-```cmd
 venv\Scripts\activate
 ```
 
 Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-serve.txt
 ```
 
-## 12. Run the Application
-
-Start the FastAPI server:
+Run the application:
 
 ```bash
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open the dashboard:
+Open `http://127.0.0.1:8000` in your browser.
 
-`http://127.0.0.1:8000`
+## Deployment
 
-API documentation:
+- GitHub: https://github.com/MeghaVerma-ux/PhishGuard
+- Live application: https://phishguard-y1s9.onrender.com
+- Health endpoint: https://phishguard-y1s9.onrender.com/health
 
-`http://127.0.0.1:8000/docs`
+## Current Limitations
+- The scanner currently extracts 73 of the 74 training features.
+- The original training-time definition of the `success` feature needs verification.
+- A false-positive concern was observed with `example.com`.
+- DNS and WHOIS lookups may return incomplete information.
+- Model confidence is not a guarantee of correctness.
 
-## 13. API Endpoints
+## Future Scope
+- Align all training and inference feature definitions.
+- Validate predictions on independently verified URLs.
+- Reduce false positives.
+- Improve security analysis and monitoring.
+- Expand algorithm comparison and evaluation.
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/` | Opens the web dashboard |
-| GET | `/health` | Checks API health |
-| GET | `/sample` | Returns a sample feature record |
-| POST | `/predict` | Generates a prediction |
-| GET | `/feature-importance` | Returns top 10 important features |
+## Disclaimer
+PhishGuard is an academic machine-learning project. Predictions are estimates and should not be treated as definitive proof that a website is safe or malicious.
 
-### Prediction API
-
-The prediction endpoint accepts extracted numerical features.
-
-Example request structure:
-
-```json
-{
-  "features": {
-    "feature_name": 0
-  }
-}
-```
-
-The complete request must contain all required feature names and valid numerical values.
-
-Example response:
-
-```json
-{
-  "prediction": 1,
-  "predicted_label": 1,
-  "result": "Class 1",
-  "confidence": 99.03,
-  "model": "Hist Gradient Boosting",
-  "message": "Prediction generated successfully"
-}
-```
-
-## 14. Testing
-
-The project uses Pytest for automated testing.
-
-Run:
-
-```bash
-python -m pytest tests/test_app.py -v
-```
-
-The following six test cases have been implemented:
-
-1. Health endpoint test
-2. Homepage loading test
-3. Sample endpoint test
-4. Valid prediction test
-5. Invalid prediction test
-6. Feature importance endpoint test
-
-**Current testing status:** 6/6 tests passed.
-
-## 15. MLflow Experiment Tracking
-
-MLflow is used for tracking model configurations and evaluation metrics.
-
-To start the MLflow dashboard:
-
-```bash
-mlflow ui --backend-store-uri sqlite:///mlflow.db
-```
-
-Open:
-
-`http://127.0.0.1:5000`
-
-## 16. Docker Deployment
-
-Build the Docker image:
-
-```bash
-docker build -t phishing-detection .
-```
-
-Run the container:
-
-```bash
-docker run -p 8000:8000 --restart unless-stopped phishing-detection
-```
-
-Open:
-
-`http://127.0.0.1:8000`
-
-## 17. Limitations
-
-- The current application expects pre-extracted numerical website features.
-- It does not automatically extract all 74 features from a raw URL.
-- Prediction quality depends on the quality and distribution of the input features.
-- Dataset label interpretation must follow the original dataset documentation.
-- Model evaluation metrics are based on the specified training and test sample, not the entire dataset.
-
-## 18. Future Scope
-
-- Automatic URL feature extraction.
-- Real-time website analysis.
-- Explainable AI integration.
-- Model drift monitoring.
-- Cloud-based deployment.
-- Improved security and validation mechanisms.
-
-## 19. Conclusion
-
-PhishGuard demonstrates an end-to-end Machine Learning workflow covering data preprocessing, algorithm comparison, model evaluation, model deployment, API development, automated testing, and feature importance analysis.
-
-The project combines Machine Learning with web technologies to create an interactive website classification system.
-
----
-
-**Project:** PhishGuard – Phishing Website Detection Using Ensemble Learning
-
-**Developed using:** Python, Scikit-learn, FastAPI, and HTML/CSS/JavaScript.
-
-**Team Members:** Add team member names and contributions here.
+## Developer
+Megha Verma  
+B.Tech – Artificial Intelligence and Machine Learning  
+The NorthCap University
