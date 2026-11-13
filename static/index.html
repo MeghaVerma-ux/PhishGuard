@@ -4,7 +4,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>PhishGuard - Phishing Detection</title>
 
 <style>
@@ -33,13 +32,14 @@ header {
 }
 
 header h1 {
-    font-size: 36px;
+    font-size: 38px;
     color: #38bdf8;
     margin-bottom: 10px;
 }
 
-header p {
+header p, .description {
     color: #cbd5e1;
+    line-height: 1.6;
 }
 
 .card {
@@ -56,28 +56,30 @@ h2 {
 }
 
 .description {
-    color: #cbd5e1;
     margin-bottom: 18px;
-    line-height: 1.6;
 }
 
-textarea {
+input, textarea {
     width: 100%;
-    min-height: 180px;
-    padding: 15px;
+    padding: 14px;
     border-radius: 8px;
     border: 1px solid #475569;
     background: #0f172a;
     color: white;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+textarea {
+    min-height: 150px;
     resize: vertical;
     font-size: 13px;
-    margin-top: 15px;
 }
 
 button {
     padding: 12px 20px;
-    margin: 12px 8px 0 0;
-    border: none;
+    margin: 8px 8px 0 0;
+    border: 0;
     border-radius: 7px;
     background: #0284c7;
     color: white;
@@ -91,29 +93,49 @@ button:hover {
 }
 
 button:disabled {
-    opacity: 0.6;
+    opacity: .6;
     cursor: not-allowed;
 }
 
 .result {
-    line-height: 2.2;
+    line-height: 2;
     font-size: 16px;
+    overflow-wrap: anywhere;
+    margin-top: 12px;
 }
 
 .result strong {
     color: #38bdf8;
 }
 
+#scanStatus, #status {
+    margin-top: 15px;
+    color: #fbbf24;
+    overflow-wrap: anywhere;
+}
+
+.prediction {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.phishing {
+    background: #7f1d1d;
+    color: #fecaca;
+}
+
+.legitimate {
+    background: #14532d;
+    color: #bbf7d0;
+}
+
 .tips {
     padding-left: 22px;
     color: #cbd5e1;
     line-height: 2;
-}
-
-#status {
-    margin-top: 15px;
-    color: #fbbf24;
-    overflow-wrap: anywhere;
 }
 
 .feature-row {
@@ -129,7 +151,6 @@ button:disabled {
 }
 
 .feature-name {
-    color: #f8fafc;
     overflow-wrap: anywhere;
 }
 
@@ -165,48 +186,82 @@ button:disabled {
     font-size: 13px;
     margin-top: 25px;
 }
+
+.divider {
+    border: 0;
+    border-top: 1px solid #334155;
+    margin: 25px 0;
+}
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
 <header>
-    <h1>🛡️ PhishGuard</h1>
+    <h1>PhishGuard</h1>
     <p>Ensemble Learning Based Website Classification System</p>
 </header>
 
 <div class="card">
 
-    <h2>Website Detection</h2>
+    <h2>Website URL Scanner</h2>
 
     <p class="description">
-        Load a demonstration feature record or paste your own
-        JSON feature values below.
+        Enter a website URL below. PhishGuard extracts available URL
+        features and uses a trained machine learning model to generate
+        a prediction.
     </p>
 
-    <textarea id="featuresInput"
-    placeholder="Click Load Demo Sample to load feature values..."></textarea>
+    <input
+        id="urlInput"
+        type="text"
+        placeholder="https://example.com"
+    >
+
+    <button id="scanBtn" onclick="scanWebsite()">
+        Scan Website
+    </button>
+
+    <p id="scanStatus"></p>
+
+    <div class="result" id="scanResult">
+        Your URL scan result will appear here.
+    </div>
+
+    <p class="note">
+        Note: DNS and WHOIS information may not be available during
+        URL-only scanning. Missing values are handled by the trained
+        model pipeline. Predictions are model estimates, not guarantees
+        of website safety.
+    </p>
+
+    <hr class="divider">
+
+    <h2>Manual Feature Prediction</h2>
+
+    <p class="description">
+        Load the demonstration feature record or enter your own JSON
+        feature values.
+    </p>
+
+    <textarea
+        id="featuresInput"
+        placeholder="Click Load Demo Sample to load feature values..."
+    ></textarea>
 
     <button id="sampleBtn" onclick="loadSample()">
         Load Demo Sample
     </button>
 
     <button id="predictBtn" onclick="predictWebsite()">
-        Predict
+        Predict Features
     </button>
 
     <p id="status"></p>
 
-</div>
-
-<div class="card">
-
-    <h2>Prediction Result</h2>
-
     <div class="result" id="result">
-        <p>Prediction will appear here.</p>
+        Manual prediction will appear here.
     </div>
 
 </div>
@@ -225,9 +280,9 @@ button:disabled {
     </div>
 
     <p class="note">
-        Higher importance means shuffling that feature caused
-        a greater decrease in the model's F1 score.
-        These are relative model-importance scores, not percentages.
+        Higher importance means shuffling that feature caused a
+        greater decrease in the model's F1 score. These are
+        relative importance scores, not percentages.
     </p>
 
 </div>
@@ -240,6 +295,7 @@ button:disabled {
         <li>Verify the website's domain carefully.</li>
         <li>Avoid entering passwords through suspicious links.</li>
         <li>Check the website's security and authenticity.</li>
+        <li>Do not share OTPs or banking details on unknown websites.</li>
     </ol>
 
 </div>
@@ -251,17 +307,130 @@ button:disabled {
 </div>
 
 <script>
-
 const API = window.location.origin;
 
+// Provisional dataset label mapping.
+// Verify against the original dataset documentation.
+const CLASS_LABELS = {
+    0: "Legitimate Website",
+    1: "Phishing Website"
+};
+
+function getPredictionLabel(prediction) {
+    return CLASS_LABELS[prediction] || "Unknown Class";
+}
+
+function showPrediction(container, prediction, confidence, model) {
+    container.replaceChildren();
+
+    const heading = document.createElement("div");
+    heading.className =
+        "prediction " +
+        (Number(prediction) === 1 ? "phishing" : "legitimate");
+
+    heading.textContent = getPredictionLabel(prediction);
+    container.appendChild(heading);
+
+    const rows = [
+        ["Predicted Class", prediction],
+        ["Confidence", confidence === null ? "Not available" : confidence + "%"],
+        ["Model", model]
+    ];
+
+    rows.forEach(([label, value]) => {
+        const p = document.createElement("p");
+        const strong = document.createElement("strong");
+
+        strong.textContent = label + ": ";
+        p.append(strong, document.createTextNode(String(value)));
+
+        container.appendChild(p);
+    });
+
+    const note = document.createElement("p");
+    note.className = "note";
+    note.textContent =
+        "This is a machine learning prediction, not a guarantee. " +
+        "The displayed class mapping is provisional and should be " +
+        "verified against the original dataset documentation.";
+
+    container.appendChild(note);
+}
+
+async function scanWebsite() {
+    const url = document.getElementById("urlInput").value.trim();
+    const button = document.getElementById("scanBtn");
+    const status = document.getElementById("scanStatus");
+    const result = document.getElementById("scanResult");
+
+    if (!url) {
+        status.textContent = "Please enter a website URL.";
+        return;
+    }
+
+    button.disabled = true;
+    status.textContent = "Scanning URL and generating prediction...";
+    result.textContent = "Please wait...";
+
+    try {
+        const response = await fetch(API + "/scan", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({url: url})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "URL scan failed.");
+        }
+
+        result.replaceChildren();
+
+        const website = document.createElement("p");
+        const strong = document.createElement("strong");
+
+        strong.textContent = "Website: ";
+        website.append(strong, document.createTextNode(data.url));
+        result.appendChild(website);
+
+        showPrediction(
+            result,
+            data.predicted_label,
+            data.confidence,
+            data.model
+        );
+
+        const features = document.createElement("p");
+        const featureStrong = document.createElement("strong");
+
+        featureStrong.textContent = "Features extracted: ";
+        features.append(
+            featureStrong,
+            document.createTextNode(
+                data.features_extracted + " / " + data.features_required
+            )
+        );
+
+        result.appendChild(features);
+
+        status.textContent = data.message;
+
+    } catch (error) {
+        status.textContent = "Error: " + error.message;
+        result.textContent = "Unable to scan this URL.";
+    } finally {
+        button.disabled = false;
+    }
+}
 
 async function loadSample() {
-
     const status = document.getElementById("status");
     const button = document.getElementById("sampleBtn");
 
     try {
-
         button.disabled = true;
         status.textContent = "Loading demonstration features...";
 
@@ -279,25 +448,18 @@ async function loadSample() {
         status.textContent = "Demo sample loaded successfully.";
 
     } catch (error) {
-
         status.textContent = "Error: " + error.message;
-
     } finally {
-
         button.disabled = false;
-
     }
 }
 
-
 async function predictWebsite() {
-
     const status = document.getElementById("status");
     const result = document.getElementById("result");
     const button = document.getElementById("predictBtn");
 
     try {
-
         const features = JSON.parse(
             document.getElementById("featuresInput").value
         );
@@ -310,9 +472,7 @@ async function predictWebsite() {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                features: features
-            })
+            body: JSON.stringify({features: features})
         });
 
         const data = await response.json();
@@ -321,48 +481,27 @@ async function predictWebsite() {
             throw new Error(data.detail || "Prediction failed.");
         }
 
-        const label =
-            data.predicted_label ??
-            data.prediction ??
-            data.result;
-
-        const confidence = data.confidence;
-
-        const confidenceText =
-            confidence === null || confidence === undefined
-            ? "Not provided"
-            : Number(confidence).toFixed(2) + "%";
-
-        result.innerHTML = `
-            <p><strong>Predicted Label:</strong> ${label}</p>
-            <p><strong>Confidence:</strong> ${confidenceText}</p>
-            <p><strong>Model:</strong> ${data.model}</p>
-            <p>${data.message}</p>
-        `;
+        showPrediction(
+            result,
+            data.predicted_label,
+            data.confidence,
+            data.model
+        );
 
         status.textContent = "Prediction completed successfully.";
 
     } catch (error) {
-
         status.textContent = "Error: " + error.message;
-
-        result.innerHTML =
-            "<p>Unable to generate prediction.</p>";
-
+        result.textContent = "Unable to generate prediction.";
     } finally {
-
         button.disabled = false;
-
     }
 }
 
-
 async function loadFeatureImportance() {
-
     const chart = document.getElementById("importanceChart");
 
     try {
-
         const response = await fetch(API + "/feature-importance");
 
         if (!response.ok) {
@@ -382,45 +521,48 @@ async function loadFeatureImportance() {
             0
         );
 
-        chart.innerHTML = features.map((item, index) => {
+        chart.replaceChildren();
 
+        features.forEach((item, index) => {
             const value = Number(item.Importance);
             const width = maxValue > 0
                 ? Math.max(0, value / maxValue * 100)
                 : 0;
 
-            return `
-                <div class="feature-row">
+            const row = document.createElement("div");
+            row.className = "feature-row";
 
-                    <div class="feature-info">
-                        <span class="feature-name">
-                            ${index + 1}. ${item.Feature}
-                        </span>
+            const info = document.createElement("div");
+            info.className = "feature-info";
 
-                        <span class="feature-value">
-                            ${value.toFixed(6)}
-                        </span>
-                    </div>
+            const name = document.createElement("span");
+            name.className = "feature-name";
+            name.textContent = (index + 1) + ". " + item.Feature;
 
-                    <div class="bar-background">
-                        <div class="bar" style="width:${width}%"></div>
-                    </div>
+            const score = document.createElement("span");
+            score.className = "feature-value";
+            score.textContent = value.toFixed(6);
 
-                </div>
-            `;
+            info.append(name, score);
 
-        }).join("");
+            const background = document.createElement("div");
+            background.className = "bar-background";
+
+            const bar = document.createElement("div");
+            bar.className = "bar";
+            bar.style.width = width + "%";
+
+            background.appendChild(bar);
+            row.append(info, background);
+            chart.appendChild(row);
+        });
 
     } catch (error) {
-
         chart.textContent = error.message;
-
     }
-
 }
 
 loadFeatureImportance();
-
 </script>
 
 </body>
